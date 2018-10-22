@@ -31,7 +31,7 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 public class Geometry
@@ -200,7 +200,7 @@ public class Geometry
 		return unitifyPath(path.getPathIterator(new AffineTransform()), unitSize);
 	}
 
-	public static GeneralPath filterPath(PathIterator it, BiFunction<float[], float[], Boolean> method)
+	public static GeneralPath filterPath(PathIterator it, BiPredicate<float[], float[]> method)
 	{
 		GeneralPath newPath = new GeneralPath();
 		float[] prevCoords = new float[2];
@@ -224,7 +224,7 @@ public class Geometry
 			}
 			else if (type == PathIterator.SEG_LINETO)
 			{
-				if (method.apply(prevCoords, coords))
+				if (method.test(prevCoords, coords))
 				{
 					if (shouldMoveNext)
 					{
@@ -246,7 +246,7 @@ public class Geometry
 				{
 					newPath.moveTo(prevCoords[0], prevCoords[1]);
 				}
-				if (method.apply(prevCoords, start))
+				if (method.test(prevCoords, start))
 				{
 					newPath.lineTo(start[0], start[1]);
 				}
@@ -259,7 +259,7 @@ public class Geometry
 		return newPath;
 	}
 
-	public static GeneralPath filterPath(GeneralPath path, BiFunction<float[], float[], Boolean> method)
+	public static GeneralPath filterPath(GeneralPath path, BiPredicate<float[], float[]> method)
 	{
 		return filterPath(path.getPathIterator(new AffineTransform()), method);
 	}

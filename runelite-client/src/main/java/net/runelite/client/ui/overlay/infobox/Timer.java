@@ -40,13 +40,18 @@ public class Timer extends InfoBox
 
 	public Timer(long period, ChronoUnit unit, BufferedImage image, Plugin plugin)
 	{
+		this(Instant.now(), period, unit, image, plugin);
+	}
+
+	public Timer(Instant startTime, long period, ChronoUnit unit, BufferedImage image, Plugin plugin)
+	{
 		super(image, plugin);
 
 		Preconditions.checkArgument(period > 0, "negative period!");
 
-		startTime = Instant.now();
-		duration = Duration.of(period, unit);
-		endTime = startTime.plus(duration);
+		this.startTime = startTime;
+		this.duration = Duration.of(period, unit);
+		this.endTime = startTime.plus(duration);
 	}
 
 	@Override

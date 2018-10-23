@@ -132,7 +132,6 @@ public class NpcAggroAreaPlugin extends Plugin
 	private WorldPoint lastPlayerLocation;
 	private int currentPlane;
 	private WorldPoint previousUnknownCenter;
-	private String username;
 	private boolean loggingIn;
 	private List<String> npcNamePatterns;
 
@@ -149,8 +148,6 @@ public class NpcAggroAreaPlugin extends Plugin
 		safeCenters = new WorldPoint[2];
 		linesToDisplay = new GeneralPath[Constants.MAX_Z];
 		npcNamePatterns = NAME_SPLITTER.splitToList(config.npcNamePatterns());
-
-		clientThread.invokeLater(() -> username = client.getUsername());
 	}
 
 	@Override
@@ -163,7 +160,6 @@ public class NpcAggroAreaPlugin extends Plugin
 		lastPlayerLocation = null;
 		currentTimer = null;
 		loggingIn = false;
-		username = null;
 		endTime = null;
 		npcNamePatterns = null;
 		active = false;
@@ -484,13 +480,11 @@ public class NpcAggroAreaPlugin extends Plugin
 
 	private void loadConfig()
 	{
-		String configGroup = NpcAggroAreaConfig.CONFIG_GROUP + "." + username;
+		safeCenters[0] = configManager.getConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_CENTER1, WorldPoint.class);
+		safeCenters[1] = configManager.getConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_CENTER2, WorldPoint.class);
+		lastPlayerLocation = configManager.getConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_LOCATION, WorldPoint.class);
 
-		safeCenters[0] = configManager.getConfiguration(configGroup, NpcAggroAreaConfig.CONFIG_CENTER1, WorldPoint.class);
-		safeCenters[1] = configManager.getConfiguration(configGroup, NpcAggroAreaConfig.CONFIG_CENTER2, WorldPoint.class);
-		lastPlayerLocation = configManager.getConfiguration(configGroup, NpcAggroAreaConfig.CONFIG_LOCATION, WorldPoint.class);
-
-		Duration timeLeft = configManager.getConfiguration(configGroup, NpcAggroAreaConfig.CONFIG_DURATION, Duration.class);
+		Duration timeLeft = configManager.getConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_DURATION, Duration.class);
 		if (timeLeft == null)
 		{
 			endTime = Instant.now();
@@ -503,26 +497,24 @@ public class NpcAggroAreaPlugin extends Plugin
 
 	private void resetConfig()
 	{
-		String configGroup = NpcAggroAreaConfig.CONFIG_GROUP + "." + username;
-		configManager.unsetConfiguration(configGroup, NpcAggroAreaConfig.CONFIG_CENTER1);
-		configManager.unsetConfiguration(configGroup, NpcAggroAreaConfig.CONFIG_CENTER2);
-		configManager.unsetConfiguration(configGroup, NpcAggroAreaConfig.CONFIG_LOCATION);
-		configManager.unsetConfiguration(configGroup, NpcAggroAreaConfig.CONFIG_DURATION);
+		configManager.unsetConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_CENTER1);
+		configManager.unsetConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_CENTER2);
+		configManager.unsetConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_LOCATION);
+		configManager.unsetConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_DURATION);
 	}
 
 	private void saveConfig()
 	{
-		String configGroup = NpcAggroAreaConfig.CONFIG_GROUP + "." + username;
 		if (safeCenters[0] == null || safeCenters[1] == null || lastPlayerLocation == null || endTime == null)
 		{
 			resetConfig();
 		}
 		else
 		{
-			configManager.setConfiguration(configGroup, NpcAggroAreaConfig.CONFIG_CENTER1, safeCenters[0]);
-			configManager.setConfiguration(configGroup, NpcAggroAreaConfig.CONFIG_CENTER2, safeCenters[1]);
-			configManager.setConfiguration(configGroup, NpcAggroAreaConfig.CONFIG_LOCATION, lastPlayerLocation);
-			configManager.setConfiguration(configGroup, NpcAggroAreaConfig.CONFIG_DURATION, Duration.between(Instant.now(), endTime));
+			configManager.setConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_CENTER1, safeCenters[0]);
+			configManager.setConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_CENTER2, safeCenters[1]);
+			configManager.setConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_LOCATION, lastPlayerLocation);
+			configManager.setConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_DURATION, Duration.between(Instant.now(), endTime));
 		}
 	}
 
@@ -561,11 +553,10 @@ public class NpcAggroAreaPlugin extends Plugin
 		else if (event.getGameState() == GameState.LOGGING_IN)
 		{
 			loggingIn = true;
-			username = client.getUsername();
 		}
 		else if (event.getGameState() == GameState.LOGIN_SCREEN)
 		{
-			if (username != null && lastPlayerLocation != null)
+			if (lastPlayerLocation != null)
 			{
 				saveConfig();
 			}
@@ -573,7 +564,6 @@ public class NpcAggroAreaPlugin extends Plugin
 			safeCenters[0] = null;
 			safeCenters[1] = null;
 			lastPlayerLocation = null;
-			username = null;
 		}
 	}
 }

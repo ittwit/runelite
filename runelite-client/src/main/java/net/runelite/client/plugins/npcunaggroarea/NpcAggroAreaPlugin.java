@@ -212,7 +212,7 @@ public class NpcAggroAreaPlugin extends Plugin
 			return false;
 		}
 
-		return Arrays.stream(actions).anyMatch(x -> x != null && x.toLowerCase().equals("open"));
+		return Arrays.stream(actions).anyMatch(x -> x != null && x.equalsIgnoreCase("open"));
 	}
 
 	private boolean collisionFilter(float[] p1, float[] p2)

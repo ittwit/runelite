@@ -115,10 +115,10 @@ public class NpcAggroAreaPlugin extends Plugin
 	private ClientThread clientThread;
 
 	@Getter
-	private WorldPoint[] safeCenters = new WorldPoint[2];
+	private final WorldPoint[] safeCenters = new WorldPoint[2];
 
 	@Getter
-	private GeneralPath[] linesToDisplay = new GeneralPath[Constants.MAX_Z];
+	private final GeneralPath[] linesToDisplay = new GeneralPath[Constants.MAX_Z];
 
 	@Getter
 	private boolean active;

@@ -158,10 +158,7 @@ public class NpcAggroAreaPlugin extends Plugin
 		npcNamePatterns = null;
 		active = false;
 
-		for (int i = 0; i < linesToDisplay.length; i++)
-		{
-			linesToDisplay[i] = null;
-		}
+		Arrays.fill(linesToDisplay, null);
 	}
 
 	private Area generateSafeArea()
@@ -296,10 +293,7 @@ public class NpcAggroAreaPlugin extends Plugin
 		}
 		else
 		{
-			for (int i = 0; i < linesToDisplay.length; i++)
-			{
-				linesToDisplay[i] = null;
-			}
+			Arrays.fill(linesToDisplay, null);
 		}
 	}
 

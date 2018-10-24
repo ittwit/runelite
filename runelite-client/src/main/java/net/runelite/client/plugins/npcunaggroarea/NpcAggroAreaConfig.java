@@ -79,7 +79,7 @@ public interface NpcAggroAreaConfig extends Config
 	)
 	default boolean showAreaLines()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(

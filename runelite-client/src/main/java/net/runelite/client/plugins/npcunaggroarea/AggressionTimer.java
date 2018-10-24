@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Adam <Adam@sigterm.info>
+ * Copyright (c) 2018, Woox <https://github.com/wooxsolo>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,50 +22,29 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.client.ui.overlay.infobox;
+package net.runelite.client.plugins.npcunaggroarea;
 
-import com.google.common.base.Preconditions;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import lombok.Getter;
+import lombok.Setter;
 import net.runelite.client.plugins.Plugin;
+import net.runelite.client.ui.overlay.infobox.Timer;
 
-public class Timer extends InfoBox
+class AggressionTimer extends Timer
 {
-	private final Instant startTime;
-	protected final Instant endTime;
-	private final Duration duration;
+	@Getter
+	@Setter
+	private boolean visible;
 
-	public Timer(long period, ChronoUnit unit, BufferedImage image, Plugin plugin)
+	AggressionTimer(Duration duration, BufferedImage image, Plugin plugin, boolean visible)
 	{
-		super(image, plugin);
-
-		Preconditions.checkArgument(period > 0, "negative period!");
-
-		this.startTime = Instant.now();
-		this.duration = Duration.of(period, unit);
-		this.endTime = startTime.plus(duration);
-	}
-
-	@Override
-	public String toString()
-	{
-		return "Timer{" + "startTime=" + startTime + ", endTime=" + endTime + ", duration=" + duration + '}';
-	}
-
-	@Override
-	public String getText()
-	{
-		Duration timeLeft = Duration.between(Instant.now(), endTime);
-
-		int seconds = (int) (timeLeft.toMillis() / 1000L);
-
-		int minutes = (seconds % 3600) / 60;
-		int secs = seconds % 60;
-
-		return String.format("%d:%02d", minutes, secs);
+		super(duration.toMillis(), ChronoUnit.MILLIS, image, plugin);
+		setTooltip("Time until NPCs become unaggressive");
+		this.visible = visible;
 	}
 
 	@Override
@@ -73,8 +52,7 @@ public class Timer extends InfoBox
 	{
 		Duration timeLeft = Duration.between(Instant.now(), endTime);
 
-		//check if timer has 10% of time left
-		if (timeLeft.getSeconds() < (duration.getSeconds() * .10))
+		if (timeLeft.getSeconds() < 60)
 		{
 			return Color.RED.brighter();
 		}
@@ -85,15 +63,11 @@ public class Timer extends InfoBox
 	@Override
 	public boolean render()
 	{
-		Duration timeLeft = Duration.between(Instant.now(), endTime);
-		return !timeLeft.isNegative();
+		return visible && super.render();
 	}
 
-	@Override
-	public boolean cull()
+	Instant getEndTime()
 	{
-		Duration timeLeft = Duration.between(Instant.now(), endTime);
-		return timeLeft.isZero() || timeLeft.isNegative();
+		return endTime;
 	}
-
 }

@@ -35,7 +35,6 @@ import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import javax.inject.Inject;
@@ -66,7 +65,6 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
-import net.runelite.client.ui.overlay.infobox.Timer;
 import net.runelite.client.util.WildcardMatcher;
 
 @Slf4j
@@ -123,12 +121,11 @@ public class NpcAggroAreaPlugin extends Plugin
 	private GeneralPath[] linesToDisplay;
 
 	@Getter
-	private Instant endTime;
-
-	@Getter
 	private boolean active;
 
-	private Timer currentTimer;
+	@Getter
+	private AggressionTimer currentTimer;
+
 	private WorldPoint lastPlayerLocation;
 	private int currentPlane;
 	private WorldPoint previousUnknownCenter;
@@ -160,7 +157,6 @@ public class NpcAggroAreaPlugin extends Plugin
 		lastPlayerLocation = null;
 		currentTimer = null;
 		loggingIn = false;
-		endTime = null;
 		npcNamePatterns = null;
 		active = false;
 	}
@@ -268,7 +264,10 @@ public class NpcAggroAreaPlugin extends Plugin
 
 	private void reevaluateActive()
 	{
-		updateTimer();
+		if (currentTimer != null)
+		{
+			currentTimer.setVisible(active && config.showTimer());
+		}
 		calculateLinesToDisplay();
 	}
 
@@ -313,36 +312,18 @@ public class NpcAggroAreaPlugin extends Plugin
 		}
 	}
 
-	private void createTimer(Instant startTime)
+	private void createTimer(Duration duration)
 	{
 		removeTimer();
 
-		if (config.showTimer() && active)
-		{
-			BufferedImage image = itemManager.getImage(ItemID.ENSOULED_DEMON_HEAD);
-			currentTimer = new Timer(startTime, AGGRESSIVE_TIME_SECONDS, ChronoUnit.SECONDS, image, this);
-			currentTimer.setTooltip("Time until NPCs become unaggressive");
-			infoBoxManager.addInfoBox(currentTimer);
-		}
-	}
-
-	private void updateTimer()
-	{
-		if (endTime == null)
-		{
-			removeTimer();
-		}
-		else
-		{
-			Instant startTime = endTime.minus(Duration.ofSeconds(AGGRESSIVE_TIME_SECONDS));
-			createTimer(startTime);
-		}
+		BufferedImage image = itemManager.getImage(ItemID.ENSOULED_DEMON_HEAD);
+		currentTimer = new AggressionTimer(duration, image, this, active && config.showTimer());
+		infoBoxManager.addInfoBox(currentTimer);
 	}
 
 	private void resetTimer()
 	{
-		endTime = Instant.now().plusSeconds(AGGRESSIVE_TIME_SECONDS);
-		updateTimer();
+		createTimer(Duration.ofSeconds(AGGRESSIVE_TIME_SECONDS));
 	}
 
 	private boolean isNpcMatch(NPC npc)
@@ -434,8 +415,7 @@ public class NpcAggroAreaPlugin extends Plugin
 			// Player went back to their previous unknown area before the 2nd
 			// center point was found, which means we don't know where it is again.
 			safeCenters[1] = null;
-			endTime = null;
-			updateTimer();
+			removeTimer();
 			calculateLinesToDisplay();
 		}
 
@@ -465,7 +445,10 @@ public class NpcAggroAreaPlugin extends Plugin
 				recheckActive();
 				break;
 			case "npcUnaggroShowTimer":
-				updateTimer();
+				if (currentTimer != null)
+				{
+					currentTimer.setVisible(active && config.showTimer());
+				}
 				break;
 			case "npcUnaggroCollisionDetection":
 			case "npcUnaggroShowAreaLines":
@@ -485,13 +468,9 @@ public class NpcAggroAreaPlugin extends Plugin
 		lastPlayerLocation = configManager.getConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_LOCATION, WorldPoint.class);
 
 		Duration timeLeft = configManager.getConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_DURATION, Duration.class);
-		if (timeLeft == null)
+		if (timeLeft != null)
 		{
-			endTime = Instant.now();
-		}
-		else
-		{
-			endTime = Instant.now().plus(timeLeft);
+			createTimer(timeLeft);
 		}
 	}
 
@@ -505,7 +484,7 @@ public class NpcAggroAreaPlugin extends Plugin
 
 	private void saveConfig()
 	{
-		if (safeCenters[0] == null || safeCenters[1] == null || lastPlayerLocation == null || endTime == null)
+		if (safeCenters[0] == null || safeCenters[1] == null || lastPlayerLocation == null || currentTimer == null)
 		{
 			resetConfig();
 		}
@@ -514,7 +493,7 @@ public class NpcAggroAreaPlugin extends Plugin
 			configManager.setConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_CENTER1, safeCenters[0]);
 			configManager.setConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_CENTER2, safeCenters[1]);
 			configManager.setConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_LOCATION, lastPlayerLocation);
-			configManager.setConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_DURATION, Duration.between(Instant.now(), endTime));
+			configManager.setConfiguration(NpcAggroAreaConfig.CONFIG_GROUP, NpcAggroAreaConfig.CONFIG_DURATION, Duration.between(Instant.now(), currentTimer.getEndTime()));
 		}
 	}
 
@@ -522,7 +501,6 @@ public class NpcAggroAreaPlugin extends Plugin
 	{
 		loadConfig();
 		resetConfig();
-		updateTimer();
 
 		WorldPoint newLocation = client.getLocalPlayer().getWorldLocation();
 		assert newLocation != null;

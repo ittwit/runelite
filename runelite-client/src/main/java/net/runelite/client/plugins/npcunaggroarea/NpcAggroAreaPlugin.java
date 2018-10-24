@@ -42,7 +42,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
-import net.runelite.api.GameState;
 import net.runelite.api.ItemID;
 import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
@@ -522,30 +521,32 @@ public class NpcAggroAreaPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		if (event.getGameState() == GameState.LOGGED_IN)
+		switch (event.getGameState())
 		{
-			if (loggingIn)
-			{
-				loggingIn = false;
-				onLogin();
-			}
+			case LOGGED_IN:
+				if (loggingIn)
+				{
+					loggingIn = false;
+					onLogin();
+				}
 
-			recheckActive();
-		}
-		else if (event.getGameState() == GameState.LOGGING_IN)
-		{
-			loggingIn = true;
-		}
-		else if (event.getGameState() == GameState.LOGIN_SCREEN)
-		{
-			if (lastPlayerLocation != null)
-			{
-				saveConfig();
-			}
+				recheckActive();
+				break;
 
-			safeCenters[0] = null;
-			safeCenters[1] = null;
-			lastPlayerLocation = null;
+			case LOGGING_IN:
+				loggingIn = true;
+				break;
+
+			case LOGIN_SCREEN:
+				if (lastPlayerLocation != null)
+				{
+					saveConfig();
+				}
+
+				safeCenters[0] = null;
+				safeCenters[1] = null;
+				lastPlayerLocation = null;
+				break;
 		}
 	}
 }

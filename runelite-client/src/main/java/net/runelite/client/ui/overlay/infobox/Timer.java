@@ -30,12 +30,14 @@ import java.awt.image.BufferedImage;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import lombok.Getter;
 import net.runelite.client.plugins.Plugin;
 
 public class Timer extends InfoBox
 {
 	private final Instant startTime;
-	protected final Instant endTime;
+	@Getter
+	private final Instant endTime;
 	private final Duration duration;
 
 	public Timer(long period, ChronoUnit unit, BufferedImage image, Plugin plugin)

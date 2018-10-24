@@ -50,7 +50,7 @@ class AggressionTimer extends Timer
 	@Override
 	public Color getTextColor()
 	{
-		Duration timeLeft = Duration.between(Instant.now(), endTime);
+		Duration timeLeft = Duration.between(Instant.now(), getEndTime());
 
 		if (timeLeft.getSeconds() < 60)
 		{
@@ -64,10 +64,5 @@ class AggressionTimer extends Timer
 	public boolean render()
 	{
 		return visible && super.render();
-	}
-
-	Instant getEndTime()
-	{
-		return endTime;
 	}
 }

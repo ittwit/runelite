@@ -48,20 +48,19 @@ class NpcAggroAreaOverlay extends Overlay
 {
 	private final static int MAX_LOCAL_DRAW_LENGTH = 20 * Perspective.LOCAL_TILE_SIZE;
 
-	@Inject
-	private Client client;
+	private final Client client;
+	private final NpcAggroAreaConfig config;
+	private final NpcAggroAreaPlugin plugin;
+
+	private final PanelComponent panelComponent;
 
 	@Inject
-	private NpcAggroAreaConfig config;
-
-	@Inject
-	private NpcAggroAreaPlugin plugin;
-
-	private PanelComponent panelComponent;
-
-	@Inject
-	public NpcAggroAreaOverlay()
+	private NpcAggroAreaOverlay(Client client, NpcAggroAreaConfig config, NpcAggroAreaPlugin plugin)
 	{
+		this.client = client;
+		this.config = config;
+		this.plugin = plugin;
+
 		panelComponent = new PanelComponent();
 		panelComponent.setPreferredSize(new Dimension(150, 0));
 

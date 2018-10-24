@@ -116,7 +116,7 @@ public class NpcAggroAreaPlugin extends Plugin
 	private ClientThread clientThread;
 
 	@Getter
-	private WorldPoint[] safeCenters;
+	private WorldPoint[] safeCenters = new WorldPoint[2];
 
 	@Getter
 	private GeneralPath[] linesToDisplay;
@@ -143,7 +143,6 @@ public class NpcAggroAreaPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		overlayManager.add(overlay);
-		safeCenters = new WorldPoint[2];
 		linesToDisplay = new GeneralPath[Constants.MAX_Z];
 		npcNamePatterns = NAME_SPLITTER.splitToList(config.npcNamePatterns());
 	}
@@ -153,7 +152,8 @@ public class NpcAggroAreaPlugin extends Plugin
 	{
 		removeTimer();
 		overlayManager.remove(overlay);
-		safeCenters = null;
+		safeCenters[0] = null;
+		safeCenters[1] = null;
 		linesToDisplay = null;
 		lastPlayerLocation = null;
 		currentTimer = null;

@@ -83,21 +83,10 @@ public interface NpcAggroAreaConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "npcUnaggroCollisionDetection",
-		name = "Collision detection",
-		description = "Only show lines where they can be walked through",
-		position = 5
-	)
-	default boolean collisionDetection()
-	{
-		return true;
-	}
-
-	@ConfigItem(
 		keyName = "npcUnaggroAreaColor",
 		name = "Area lines colour",
 		description = "Choose colour to use for marking NPC unaggressive area",
-		position = 6
+		position = 5
 	)
 	default Color aggroAreaColor()
 	{

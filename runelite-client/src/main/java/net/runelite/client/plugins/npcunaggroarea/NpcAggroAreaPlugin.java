@@ -299,11 +299,8 @@ public class NpcAggroAreaPlugin extends Plugin
 
 	private void removeTimer()
 	{
-		if (currentTimer != null)
-		{
-			infoBoxManager.removeInfoBox(currentTimer);
-			currentTimer = null;
-		}
+		infoBoxManager.removeInfoBox(currentTimer);
+		currentTimer = null;
 	}
 
 	private void createTimer(Duration duration)

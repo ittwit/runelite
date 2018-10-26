@@ -322,6 +322,14 @@ public class NpcAggroAreaPlugin extends Plugin
 		createTimer(Duration.ofSeconds(AGGRESSIVE_TIME_SECONDS));
 	}
 
+	private boolean isInWilderness(WorldPoint location)
+	{
+		WorldArea aboveGround = new WorldArea(2944, 3523, 448, 448, 0);
+		WorldArea underground = new WorldArea(2944, 9918, 320, 442, 0);
+
+		return aboveGround.distanceTo2D(location) == 0 || underground.distanceTo2D(location) == 0;
+	}
+
 	private boolean isNpcMatch(NPC npc)
 	{
 		NPCComposition composition = npc.getTransformedComposition();
@@ -335,7 +343,7 @@ public class NpcAggroAreaPlugin extends Plugin
 		int playerLvl = client.getLocalPlayer().getCombatLevel();
 		int npcLvl = composition.getCombatLevel();
 		String npcName = composition.getName().toLowerCase();
-		if (npcLvl > 0 && playerLvl > npcLvl * 2)
+		if (npcLvl > 0 && playerLvl > npcLvl * 2 && !isInWilderness(npc.getWorldLocation()))
 		{
 			return false;
 		}

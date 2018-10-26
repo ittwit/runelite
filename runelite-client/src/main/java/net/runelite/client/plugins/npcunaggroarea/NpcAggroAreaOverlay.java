@@ -41,8 +41,6 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
-import net.runelite.client.ui.overlay.components.LineComponent;
-import net.runelite.client.ui.overlay.components.PanelComponent;
 
 class NpcAggroAreaOverlay extends Overlay
 {
@@ -52,8 +50,6 @@ class NpcAggroAreaOverlay extends Overlay
 	private final NpcAggroAreaConfig config;
 	private final NpcAggroAreaPlugin plugin;
 
-	private final PanelComponent panelComponent;
-
 	@Inject
 	private NpcAggroAreaOverlay(Client client, NpcAggroAreaConfig config, NpcAggroAreaPlugin plugin)
 	{
@@ -61,11 +57,9 @@ class NpcAggroAreaOverlay extends Overlay
 		this.config = config;
 		this.plugin = plugin;
 
-		panelComponent = new PanelComponent();
-		panelComponent.setPreferredSize(new Dimension(150, 0));
-
 		setLayer(OverlayLayer.ABOVE_SCENE);
 		setPriority(OverlayPriority.LOW);
+		setPosition(OverlayPosition.DYNAMIC);
 	}
 
 	@Override
@@ -78,15 +72,9 @@ class NpcAggroAreaOverlay extends Overlay
 
 		if (plugin.getSafeCenters()[1] == null)
 		{
-			setPosition(OverlayPosition.TOP_LEFT);
-			panelComponent.getChildren().clear();
-			panelComponent.getChildren().add(LineComponent.builder()
-				.left("Unaggressive NPC timers will start working when you teleport far away or enter a dungeon.")
-				.build());
-			return panelComponent.render(graphics);
+			return null;
 		}
 
-		setPosition(OverlayPosition.DYNAMIC);
 
 		GeneralPath lines = plugin.getLinesToDisplay()[client.getPlane()];
 		if (lines == null)

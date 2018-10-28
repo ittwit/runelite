@@ -37,7 +37,6 @@ import net.runelite.client.ui.overlay.components.PanelComponent;
 class NpcAggroAreaNotWorkingOverlay extends Overlay
 {
 	private final NpcAggroAreaPlugin plugin;
-
 	private final PanelComponent panelComponent;
 
 	@Inject

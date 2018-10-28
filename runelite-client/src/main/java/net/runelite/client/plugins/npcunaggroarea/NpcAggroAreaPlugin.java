@@ -24,8 +24,8 @@
  */
 package net.runelite.client.plugins.npcunaggroarea;
 
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Provides;
 import java.awt.Polygon;
@@ -57,7 +57,6 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.geometry.Geometry;
-import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
@@ -65,7 +64,17 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.WildcardMatcher;
+import org.apache.commons.lang3.ArrayUtils;
 
+/**
+ * How it works: The game remembers 2 tiles. When the player goes >10 steps
+ * away from both tiles, the oldest one is moved to under the player and the
+ * NPC aggression timer resets.
+ * So to first figure out where the 2 tiles are, we wait until the player teleports
+ * a long enough distance. At that point it's very likely that the player
+ * moved out of the radius of both tiles, which resets one of them. The other
+ * should reset shortly after as the player starts moving around.
+ */
 @Slf4j
 @PluginDescriptor(
 	name = "Unaggressive NPC timer",
@@ -75,20 +84,12 @@ import net.runelite.client.util.WildcardMatcher;
 )
 public class NpcAggroAreaPlugin extends Plugin
 {
-	/*
-	How it works: The game remembers 2 tiles. When the player goes >10 steps
-	away from both tiles, the oldest one is moved to under the player and the
-	NPC aggression timer resets.
-	So to first figure out where the 2 tiles are, we wait until the player teleports
-	a long enough distance. At that point it's very likely that the player
-	moved out of the radius of both tiles, which resets one of them. The other
-	should reset shortly after as the player starts moving around.
-	*/
-
-	private final static int SAFE_AREA_RADIUS = 10;
-	private final static int UNKNOWN_AREA_RADIUS = SAFE_AREA_RADIUS * 2;
-	private final static int AGGRESSIVE_TIME_SECONDS = 600;
-	private final static Splitter NAME_SPLITTER = Splitter.on(CharMatcher.anyOf(",\n")).omitEmptyStrings().trimResults();
+	private static final int SAFE_AREA_RADIUS = 10;
+	private static final int UNKNOWN_AREA_RADIUS = SAFE_AREA_RADIUS * 2;
+	private static final int AGGRESSIVE_TIME_SECONDS = 600;
+	private static final Splitter NAME_SPLITTER = Splitter.on(',').omitEmptyStrings().trimResults();
+	private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
+	private static final WorldArea WILDERNESS_UNDERGROUND = new WorldArea(2944, 9918, 320, 442, 0);
 
 	@Inject
 	private Client client;
@@ -113,9 +114,6 @@ public class NpcAggroAreaPlugin extends Plugin
 
 	@Inject
 	private ConfigManager configManager;
-
-	@Inject
-	private ClientThread clientThread;
 
 	@Getter
 	private final WorldPoint[] safeCenters = new WorldPoint[2];
@@ -168,7 +166,7 @@ public class NpcAggroAreaPlugin extends Plugin
 
 	private Area generateSafeArea()
 	{
-		Area area = new Area();
+		final Area area = new Area();
 
 		for (WorldPoint wp : safeCenters)
 		{
@@ -211,13 +209,7 @@ public class NpcAggroAreaPlugin extends Plugin
 			return false;
 		}
 
-		String[] actions = objectComposition.getActions();
-		if (actions == null)
-		{
-			return false;
-		}
-
-		return Arrays.stream(actions).anyMatch(x -> x != null && x.equalsIgnoreCase("open"));
+		return ArrayUtils.contains(objectComposition.getActions(), "Open");
 	}
 
 	private boolean collisionFilter(float[] p1, float[] p2)
@@ -233,18 +225,19 @@ public class NpcAggroAreaPlugin extends Plugin
 			x1 = x2;
 			x2 = temp;
 		}
+
 		if (y1 > y2)
 		{
 			int temp = y1;
 			y1 = y2;
 			y2 = temp;
 		}
+
 		int dx = x2 - x1;
 		int dy = y2 - y1;
-		WorldArea wa1 = new WorldArea(new WorldPoint(
-			x1, y1, currentPlane), 1, 1);
-		WorldArea wa2 = new WorldArea(new WorldPoint(
-			x1 - dy, y1 - dx, currentPlane), 1, 1);
+
+		WorldArea wa1 = new WorldArea(new WorldPoint(x1, y1, currentPlane), 1, 1);
+		WorldArea wa2 = new WorldArea(new WorldPoint(x1 - dy, y1 - dx, currentPlane), 1, 1);
 
 		if (isOpenableAt(wa1.toWorldPoint()) || isOpenableAt(wa2.toWorldPoint()))
 		{
@@ -262,9 +255,9 @@ public class NpcAggroAreaPlugin extends Plugin
 
 	private void transformWorldToLocal(float[] coords)
 	{
-		LocalPoint lp = LocalPoint.fromWorld(client, (int)coords[0], (int)coords[1]);
-		coords[0] = lp.getX() - Perspective.LOCAL_TILE_SIZE / 2;
-		coords[1] = lp.getY() - Perspective.LOCAL_TILE_SIZE / 2;
+		final LocalPoint lp = LocalPoint.fromWorld(client, (int)coords[0], (int)coords[1]);
+		coords[0] = lp.getX() - Perspective.LOCAL_TILE_SIZE / 2f;
+		coords[1] = lp.getY() - Perspective.LOCAL_TILE_SIZE / 2f;
 	}
 
 	private void reevaluateActive()
@@ -273,32 +266,32 @@ public class NpcAggroAreaPlugin extends Plugin
 		{
 			currentTimer.setVisible(active && config.showTimer());
 		}
+
 		calculateLinesToDisplay();
 	}
 
 	private void calculateLinesToDisplay()
 	{
-		if (active && config.showAreaLines())
-		{
-			Rectangle sceneRect = new Rectangle(
-				client.getBaseX() + 1, client.getBaseY() + 1,
-				Constants.SCENE_SIZE - 2, Constants.SCENE_SIZE - 2);
-
-			for (int i = 0; i < linesToDisplay.length; i++)
-			{
-				currentPlane = i;
-
-				GeneralPath lines = new GeneralPath(generateSafeArea());
-				lines = Geometry.clipPath(lines, sceneRect);
-				lines = Geometry.unitifyPath(lines, 1);
-				lines = Geometry.filterPath(lines, this::collisionFilter);
-				lines = Geometry.transformPath(lines, this::transformWorldToLocal);
-				linesToDisplay[i] = lines;
-			}
-		}
-		else
+		if (!active || !config.showAreaLines())
 		{
 			Arrays.fill(linesToDisplay, null);
+			return;
+		}
+
+		Rectangle sceneRect = new Rectangle(
+			client.getBaseX() + 1, client.getBaseY() + 1,
+			Constants.SCENE_SIZE - 2, Constants.SCENE_SIZE - 2);
+
+		for (int i = 0; i < linesToDisplay.length; i++)
+		{
+			currentPlane = i;
+
+			GeneralPath lines = new GeneralPath(generateSafeArea());
+			lines = Geometry.clipPath(lines, sceneRect);
+			lines = Geometry.unitifyPath(lines, 1);
+			lines = Geometry.filterPath(lines, this::collisionFilter);
+			lines = Geometry.transformPath(lines, this::transformWorldToLocal);
+			linesToDisplay[i] = lines;
 		}
 	}
 
@@ -311,7 +304,6 @@ public class NpcAggroAreaPlugin extends Plugin
 	private void createTimer(Duration duration)
 	{
 		removeTimer();
-
 		BufferedImage image = itemManager.getImage(ItemID.ENSOULED_DEMON_HEAD);
 		currentTimer = new AggressionTimer(duration, image, this, active && config.showTimer());
 		infoBoxManager.addInfoBox(currentTimer);
@@ -322,18 +314,20 @@ public class NpcAggroAreaPlugin extends Plugin
 		createTimer(Duration.ofSeconds(AGGRESSIVE_TIME_SECONDS));
 	}
 
-	private boolean isInWilderness(WorldPoint location)
+	private static boolean isInWilderness(WorldPoint location)
 	{
-		WorldArea aboveGround = new WorldArea(2944, 3523, 448, 448, 0);
-		WorldArea underground = new WorldArea(2944, 9918, 320, 442, 0);
-
-		return aboveGround.distanceTo2D(location) == 0 || underground.distanceTo2D(location) == 0;
+		return WILDERNESS_ABOVE_GROUND.distanceTo2D(location) == 0 || WILDERNESS_UNDERGROUND.distanceTo2D(location) == 0;
 	}
 
 	private boolean isNpcMatch(NPC npc)
 	{
 		NPCComposition composition = npc.getTransformedComposition();
 		if (composition == null)
+		{
+			return false;
+		}
+
+		if (Strings.isNullOrEmpty(composition.getName()))
 		{
 			return false;
 		}
@@ -359,23 +353,34 @@ public class NpcAggroAreaPlugin extends Plugin
 		return false;
 	}
 
-	private void recheckActive()
+	private void checkAreaNpcs(final NPC... npcs)
 	{
-		active = config.alwaysActive();
-
-		if (!active)
+		if (active)
 		{
-			for (NPC npc : client.getNpcs())
+			return;
+		}
+
+		for (NPC npc : npcs)
+		{
+			if (npc == null)
 			{
-				if (isNpcMatch(npc))
-				{
-					active = true;
-					break;
-				}
+				continue;
+			}
+
+			if (isNpcMatch(npc))
+			{
+				active = true;
+				break;
 			}
 		}
 
 		reevaluateActive();
+	}
+
+	private void recheckActive()
+	{
+		active = config.alwaysActive();
+		checkAreaNpcs(client.getCachedNPCs());
 	}
 
 	@Subscribe
@@ -386,11 +391,7 @@ public class NpcAggroAreaPlugin extends Plugin
 			return;
 		}
 
-		if (!active && isNpcMatch(event.getNpc()))
-		{
-			active = true;
-			reevaluateActive();
-		}
+		checkAreaNpcs(event.getNpc());
 	}
 
 	@Subscribe

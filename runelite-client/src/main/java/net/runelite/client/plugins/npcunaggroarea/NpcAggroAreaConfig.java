@@ -32,7 +32,7 @@ import net.runelite.client.config.ConfigItem;
 @ConfigGroup("npcUnaggroArea")
 public interface NpcAggroAreaConfig extends Config
 {
-	String CONFIG_GROUP = "npcunaggroarea";
+	String CONFIG_GROUP = "npcUnaggroArea";
 	String CONFIG_CENTER1 = "center1";
 	String CONFIG_CENTER2 = "center2";
 	String CONFIG_LOCATION = "location";

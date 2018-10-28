@@ -44,7 +44,7 @@ import net.runelite.client.ui.overlay.OverlayPriority;
 
 class NpcAggroAreaOverlay extends Overlay
 {
-	private final static int MAX_LOCAL_DRAW_LENGTH = 20 * Perspective.LOCAL_TILE_SIZE;
+	private static final int MAX_LOCAL_DRAW_LENGTH = 20 * Perspective.LOCAL_TILE_SIZE;
 
 	private final Client client;
 	private final NpcAggroAreaConfig config;
@@ -94,7 +94,6 @@ class NpcAggroAreaOverlay extends Overlay
 		}
 
 		renderPath(graphics, lines, outlineColor);
-
 		return null;
 	}
 

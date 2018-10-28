@@ -66,15 +66,6 @@ import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.WildcardMatcher;
 import org.apache.commons.lang3.ArrayUtils;
 
-/**
- * How it works: The game remembers 2 tiles. When the player goes >10 steps
- * away from both tiles, the oldest one is moved to under the player and the
- * NPC aggression timer resets.
- * So to first figure out where the 2 tiles are, we wait until the player teleports
- * a long enough distance. At that point it's very likely that the player
- * moved out of the radius of both tiles, which resets one of them. The other
- * should reset shortly after as the player starts moving around.
- */
 @Slf4j
 @PluginDescriptor(
 	name = "Unaggressive NPC timer",
@@ -84,6 +75,16 @@ import org.apache.commons.lang3.ArrayUtils;
 )
 public class NpcAggroAreaPlugin extends Plugin
 {
+	/*
+	How it works: The game remembers 2 tiles. When the player goes >10 steps
+	away from both tiles, the oldest one is moved to under the player and the
+	NPC aggression timer resets.
+	So to first figure out where the 2 tiles are, we wait until the player teleports
+	a long enough distance. At that point it's very likely that the player
+	moved out of the radius of both tiles, which resets one of them. The other
+	should reset shortly after as the player starts moving around.
+	*/
+
 	private static final int SAFE_AREA_RADIUS = 10;
 	private static final int UNKNOWN_AREA_RADIUS = SAFE_AREA_RADIUS * 2;
 	private static final int AGGRESSIVE_TIME_SECONDS = 600;

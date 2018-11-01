@@ -579,7 +579,7 @@ public class ConfigManager
 		}
 		if (object instanceof Duration)
 		{
-			return ((Duration)object).toMillis() + "";
+			return Long.toString(((Duration)object).toMillis());
 		}
 		return object.toString();
 	}

@@ -154,8 +154,7 @@ public class NpcAggroAreaPlugin extends Plugin
 		removeTimer();
 		overlayManager.remove(overlay);
 		overlayManager.remove(notWorkingOverlay);
-		safeCenters[0] = null;
-		safeCenters[1] = null;
+		Arrays.fill(safeCenters, null);
 		lastPlayerLocation = null;
 		currentTimer = null;
 		loggingIn = false;

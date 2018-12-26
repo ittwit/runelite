@@ -50,7 +50,6 @@ class NpcAggroAreaNotWorkingOverlay extends Overlay
 			.left("Unaggressive NPC timers will start working when you teleport far away or enter a dungeon.")
 			.build());
 
-		setLayer(OverlayLayer.ABOVE_SCENE);
 		setPriority(OverlayPriority.LOW);
 		setPosition(OverlayPosition.TOP_LEFT);
 	}

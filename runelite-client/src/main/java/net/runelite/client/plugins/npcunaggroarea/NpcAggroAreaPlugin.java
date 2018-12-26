@@ -355,11 +355,6 @@ public class NpcAggroAreaPlugin extends Plugin
 
 	private void checkAreaNpcs(final NPC... npcs)
 	{
-		if (active)
-		{
-			return;
-		}
-
 		for (NPC npc : npcs)
 		{
 			if (npc == null)

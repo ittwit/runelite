@@ -26,7 +26,6 @@ package net.runelite.client.plugins.npcunaggroarea;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.common.eventbus.Subscribe;
 import com.google.inject.Provides;
 import java.awt.Polygon;
 import java.awt.Rectangle;
@@ -58,6 +57,7 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.geometry.Geometry;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;

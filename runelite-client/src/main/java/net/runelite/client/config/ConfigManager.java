@@ -43,6 +43,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -56,6 +57,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ConfigChanged;
 import net.runelite.client.RuneLite;
 import net.runelite.client.account.AccountSession;
@@ -521,6 +523,18 @@ public class ConfigManager
 			int mods = Integer.parseInt(splitStr[1]);
 			return new Keybind(code, mods);
 		}
+		if (type == WorldPoint.class)
+		{
+			String[] splitStr = str.split(":");
+			int x = Integer.parseInt(splitStr[0]);
+			int y = Integer.parseInt(splitStr[1]);
+			int plane = Integer.parseInt(splitStr[2]);
+			return new WorldPoint(x, y, plane);
+		}
+		if (type == Duration.class)
+		{
+			return Duration.ofMillis(Long.parseLong(str));
+		}
 		return str;
 	}
 
@@ -557,6 +571,15 @@ public class ConfigManager
 		{
 			Keybind k = (Keybind) object;
 			return k.getKeyCode() + ":" + k.getModifiers();
+		}
+		if (object instanceof WorldPoint)
+		{
+			WorldPoint wp = (WorldPoint)object;
+			return wp.getX() + ":" + wp.getY() + ":" + wp.getPlane();
+		}
+		if (object instanceof Duration)
+		{
+			return Long.toString(((Duration)object).toMillis());
 		}
 		return object.toString();
 	}
